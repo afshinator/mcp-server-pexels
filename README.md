@@ -1,5 +1,24 @@
 # mcp-server-pexels: FULL PROJECT SPECIFICATION & README
 
+## Design Document
+
+Complete design specification consolidated into `original-specs.md` (single source of truth).
+
+## MCP Best Practices
+
+**CLI & Configuration:**
+- No custom CLI flags — stdio MCP servers are spawned as child processes by MCP clients
+- Configuration via MCP client config files (`.mcp.json`, `claude_desktop_config.json`)
+- All logging via `console.error()` only — stdout is reserved for JSON-RPC messages
+- API keys passed via `env` field in config, never in `args`
+
+**Server Capabilities:**
+- Initialize with metadata + instructions for the LLM
+- Use `registerTool()` (MCP v2 SDK), not deprecated `tool()` method
+- Tool annotations: `readOnlyHint: true`, `idempotentHint: true` for read-only tools
+- Return `CallToolResult` with proper `content` array and `isError: true` for failures
+- Input schemas must be wrapped in `z.object()` (Zod v4)
+
 ## 1. TECHNICAL SPECIFICATIONS
 - **Project Name:** mcp-server-pexels[cite: 1]
 - **Environment:** Linux Mint (Desktop/Laptop)[cite: 1]
@@ -11,11 +30,30 @@
 - **Namespace:** `pexels_`[cite: 1]
 
 ## 2. ADVANCED LOGIC & COMPLIANCE
+- **Architecture:** Modular by tool with pure functions for testability[cite: 1]
 - **Caching:** Implement `node-cache` (TTL: 10m for searches, 60m for ID lookups).[cite: 1]
 - **Error Handling:** Catch 429 errors and return text: "Rate limit reached. Resets at [time]."[cite: 1]
 - **Video Logic:** Filter the `video_files` array for the highest resolution under or at 1080p.[cite: 1]
 - **Attribution:** Hardcode "Photo by [Photographer] on Pexels" into every text response.[cite: 1]
 - **Visuals:** Return `type: "image"` content blocks using `src.medium` for UI rendering.[cite: 1]
+
+## 3. ARCHITECTURE
+**Project Structure:** Modular by tool with pure functions for testability:
+- `src/index.ts` — entry point, McpServer setup
+- `src/tools/photo-search.ts` — `pexels_search_photos` tool
+- `src/tools/video-search.ts` — `pexels_search_videos` tool
+- `src/tools/get-details.ts` — `pexels_get_details` tool
+- `src/shared/cache.ts` — pure cache functions
+- `src/shared/api-client.ts` — pure API call functions
+- `src/shared/errors.ts` — pure error handling
+- `src/shared/types.ts` — shared TypeScript types
+- `src/shared/video-selector.ts` — pure video selection logic
+- `src/utils/validation.ts` — Zod schemas and validation helpers
+
+**Tool Registration (MCP v2 SDK):**
+- Use `registerTool()` not deprecated `tool()` method
+- Input schemas wrapped in `z.object()` (Zod v4)
+- Tool annotations: `readOnlyHint: true`, `idempotentHint: true`
 
 ## 3. FULL README.md CONTENT
 # mcp-server-pexels
