@@ -4,9 +4,23 @@ This file provides guidance to Claude Code and other tools when working with cod
 
 ## Project Status
 
-This is a **pre-implementation** TypeScript MCP server. The full specification lives in `SPEC.md` and `README.md`. No source files exist yet — implementation starts here.
+**Phase 1 (MVP) in progress** — building from the implementation plan in `original-specs.md`.
+
+| Task | Status |
+|------|--------|
+| 1. Project Setup | Done |
+| 2. Shared Types | Done |
+| 3. Cache Module | Next |
+| 4–12. Remaining | Pending |
 
 Design specification consolidated into `original-specs.md` (single source of truth).
+
+## Dev Environment Notes
+
+- **Vitest**: v4.x crashes with `Bus error (core dumped)` in this container (Node v22, Debian 12). Use `vitest@^3.0.0`. Package locked to 3.2.4.
+- **`import type`**: Erased at runtime by vitest/esbuild — tests relying solely on `import type` will pass even when the module doesn't exist. Include a dynamic `import()` assertion to force runtime resolution.
+- **vitest CLI**: Run via `./node_modules/.bin/vitest` or `npm test` — the `rtk` passthrough proxy breaks vitest's output parsing.
+- **`@vitest/coverage-v8`**: Removed. Re-add only once vitest v4 stability confirmed.
 
 ## MCP Best Practices (Researched 2026-04-30)
 
