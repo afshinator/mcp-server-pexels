@@ -10,17 +10,20 @@ This file provides guidance to Claude Code and other tools when working with cod
 |------|--------|
 | 1. Project Setup | Done |
 | 2. Shared Types | Done |
-| 3. Cache Module | Next |
-| 4–12. Remaining | Pending |
+| 3. Cache Module | Done |
+| 4. Video Selector | Done |
+| 5. Error Handling | Done |
+| 6. Validation | Done |
+| 7–12. Remaining | Pending |
 
 Design specification consolidated into `original-specs.md` (single source of truth).
 
 ## Dev Environment Notes
 
-- **Vitest**: v4.x crashes with `Bus error (core dumped)` in this container (Node v22, Debian 12). Use `vitest@^3.0.0`. Package locked to 3.2.4.
+- **Vitest**: Locked to `^4.1.5`. The `Bus error (core dumped)` with v4 was machine-specific (laptop); v4.1.5 passes all tests on this desktop (Node v22, Debian 12).
 - **`import type`**: Erased at runtime by vitest/esbuild — tests relying solely on `import type` will pass even when the module doesn't exist. Include a dynamic `import()` assertion to force runtime resolution.
 - **vitest CLI**: Run via `./node_modules/.bin/vitest` or `npm test` — the `rtk` passthrough proxy breaks vitest's output parsing.
-- **`@vitest/coverage-v8`**: Removed. Re-add only once vitest v4 stability confirmed.
+- **`@vitest/coverage-v8`**: Removed. Re-add if needed.
 
 ## MCP Best Practices (Researched 2026-04-30)
 
