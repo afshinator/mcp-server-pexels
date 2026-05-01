@@ -1,0 +1,33 @@
+{
+  "name": "mcp-server-pexels",
+  "version": "1.0.0",
+  "description": "MCP server for Pexels photo and video search",
+  "type": "module",
+  "main": "build/index.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node build/index.js",
+    "start:dev": "node --env-file=.env build/index.js",
+    "inspector": "npm run build && npx @modelcontextprotocol/inspector node build/index.js",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "node-cache": "^5.1.2",
+    "zod": "^4.4.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "@vitest/coverage-v8": "^4.1.5",
+    "msw": "^2.14.2",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.5"
+  }
+}

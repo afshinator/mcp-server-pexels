@@ -34,7 +34,41 @@ This document is a comprehensive technical brief and handoff prompt. It integrat
     *   Mandatory Attribution: `Photo by [Photographer] on Pexels`.
     *   Metadata: `alt_text`, `avg_color`, `id`.
     *   Direct Link: `url` (original high-res).
-*   **Image Content:** Return the `src.medium` or `src.small` URL as a `type: "image"` content block for immediate visual rendering in the AI chat interface.
+*   **Image Content:** Return a hybrid image response per the **2026-05-01 image content decision** (see below).
+
+---
+
+## 3b. Image Content Decision (2026-05-01)
+
+### Problem
+The MCP SDK's `ImageContent` type only supports `data` (base64) + `mimeType`. The spec referenced a `url` field for remote images. Three options were evaluated:
+
+| Option | Renders visually | No extra latency | Portable |
+|---|---|---|---|
+| (a) URL in text block only | ✗ | ✓ | ✓ |
+| (b) `url` field (type-asserted) | maybe | ✓ | depends on client |
+| (c) Fetch + base64 encode | ✓ | ✗ | ✓ |
+
+### Decision: Hybrid (b) + (a)
+Every image response emits **both**:
+1. A `type: "image"` block with a `url` field (type-asserted past the SDK types) — renders natively in clients that support remote image URLs (Claude Desktop, Claude.ai).
+2. The same URL embedded inside the `type: "text"` block alongside the metadata — always accessible as a fallback.
+
+### Rationale
+- Visual rendering is the core value of an image search tool; option (a) alone defeats the purpose.
+- Option (c) adds 5 sequential HTTP fetches per search call and ~500KB–1MB of base64 per response — too costly.
+- Option (b) was already documented as compliant in recent MCP research (2026-04-30); adding the text fallback makes it fully gracefully degradable.
+- Zero extra latency. No extra dependencies.
+
+### Implementation note
+```typescript
+// In every tool handler that returns images:
+content.push({ type: 'text', text: `...metadata...\n![Preview](${photo.src.medium})` });
+content.push({ type: 'image', url: photo.src.medium } as ImageContent);
+```
+
+### What agents using this server should know
+The image `url` field in content blocks points to `src.medium` (Pexels CDN). If your MCP client does not render the image block visually, the same URL is present in the preceding text block as a markdown image link. Always include photographer attribution from the text block.
 
 ---
 
