@@ -1,9 +1,4 @@
-import type { ContentBlock } from './types.js';
-
-export interface CallToolResult {
-  content: ContentBlock[];
-  isError?: boolean;
-}
+import type { CallToolResult } from './types.js';
 
 export function parseRateLimit(headers: Headers): string | null {
   const resetValue = headers.get('x-ratelimit-reset');

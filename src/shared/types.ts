@@ -80,6 +80,4 @@ export interface VideoSearchParams {
   force_refresh?: boolean;
 }
 
-export type ContentBlock =
-  | { type: 'text'; text: string }
-  | { type: 'image'; url?: string; data?: string; mimeType?: string };
+export type { ContentBlock, CallToolResult } from '@modelcontextprotocol/sdk/types.js';

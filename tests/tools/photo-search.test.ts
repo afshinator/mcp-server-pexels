@@ -32,7 +32,7 @@ describe('Photo Search Tool', () => {
 
       expect(result).toHaveLength(2);
       expect(result[0].type).toBe('text');
-      expect(result[1].type).toBe('image');
+      expect(result[1].type).toBe('resource_link');
 
       const textBlock = result[0] as { type: 'text'; text: string };
       expect(textBlock.text).toContain('Photo by [John Doe]');
@@ -41,8 +41,9 @@ describe('Photo Search Tool', () => {
       expect(textBlock.text).toContain('**Dimensions:** 1920x1080');
       expect(textBlock.text).toContain('#FF0000');
 
-      const imageBlock = result[1] as { type: 'image'; url: string };
-      expect(imageBlock.url).toBe('https://images.pexels.com/medium.jpg');
+      const linkBlock = result[1] as { type: 'resource_link'; uri: string; mimeType: string };
+      expect(linkBlock.uri).toBe('https://images.pexels.com/medium.jpg');
+      expect(linkBlock.mimeType).toBe('image/jpeg');
     });
 
     it('should include markdown image link in text block', () => {
@@ -71,9 +72,11 @@ describe('Photo Search Tool', () => {
 
       const result = formatPhotoResult(photo);
       const textBlock = result[0] as { type: 'text'; text: string };
+      const linkBlock = result[1] as { type: 'resource_link'; uri: string };
 
       expect(textBlock.text).toContain('![Preview](');
       expect(textBlock.text).toContain('medium2.jpg');
+      expect(linkBlock.uri).toContain('medium2.jpg');
     });
 
     it('should handle photo with no alt text', () => {

@@ -1,22 +1,19 @@
-import type { ContentBlock } from '../shared/types.js';
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { ContentBlock, CallToolResult } from '../shared/types.js';
 import { getDetailsSchema } from '../utils/validation.js';
 import { fetchPhotoDetails, fetchVideoDetails } from '../shared/api-client.js';
 import { getFromCache, setCache, makeCacheKey } from '../shared/cache.js';
 import { chooseBestVideo } from '../shared/video-selector.js';
 import { formatPexelsError } from '../shared/errors.js';
+import * as z from 'zod';
 
 export async function handleGetDetails(
-  args: unknown,
-): Promise<{ content: ContentBlock[]; isError?: boolean }> {
-  const parsed = getDetailsSchema.safeParse(args);
-  if (!parsed.success) {
-    return formatPexelsError('invalid_query');
-  }
-
-  const { id, type, force_refresh: forceRefresh } = parsed.data;
+  args: z.infer<typeof getDetailsSchema>,
+): Promise<CallToolResult> {
+  const { id, type, force_refresh: forceRefresh } = args;
+  const cacheKey = makeCacheKey({ id, type });
 
   if (!forceRefresh) {
-    const cacheKey = makeCacheKey({ id, type });
     const cached = getFromCache<ContentBlock[]>(cacheKey);
     if (cached) {
       return { content: cached };
@@ -26,12 +23,8 @@ export async function handleGetDetails(
   try {
     if (type === 'photo') {
       const photo = await fetchPhotoDetails(id);
-      const photographerHandle = photo.photographer
-        .toLowerCase()
-        .replace(/\s+/g, '')
-        .replace(/[^a-z0-9]/g, '');
 
-      const text = `Photo by [${photo.photographer}](https://www.pexels.com/@${photographerHandle}) on Pexels
+      const text = `Photo by [${photo.photographer}](${photo.photographer_url}) on Pexels
 
 **ID:** ${photo.id}
 **Dimensions:** ${photo.width}x${photo.height}
@@ -42,23 +35,16 @@ export async function handleGetDetails(
 
       const result: ContentBlock[] = [
         { type: 'text', text },
-        { type: 'image', url: photo.src.medium },
+        { type: 'resource_link', uri: photo.src.medium, name: 'Preview', mimeType: 'image/jpeg' },
       ];
 
-      if (!forceRefresh) {
-        setCache(makeCacheKey({ id, type }), result, 3600);
-      }
-
+      setCache(cacheKey, result, 3600);
       return { content: result };
     } else {
       const video = await fetchVideoDetails(id);
       const bestFile = chooseBestVideo(video.video_files);
-      const photographerHandle = video.user.name
-        .toLowerCase()
-        .replace(/\s+/g, '')
-        .replace(/[^a-z0-9]/g, '');
 
-      const text = `Video by [${video.user.name}](https://www.pexels.com/@${photographerHandle}) on Pexels
+      const text = `Video by [${video.user.name}](${video.user.url}) on Pexels
 
 **ID:** ${video.id}
 **Dimensions:** ${video.width}x${video.height}
@@ -66,15 +52,12 @@ export async function handleGetDetails(
 **Link:** ${video.url}
 ![Preview](${video.image})`;
 
-      const result: ContentBlock[] = [
-        { type: 'text', text },
-        { type: 'image', url: bestFile?.link || video.image },
-      ];
+      const mediaBlock: ContentBlock = bestFile
+        ? { type: 'resource_link', uri: bestFile.link, name: 'Video', mimeType: 'video/mp4' }
+        : { type: 'resource_link', uri: video.image, name: 'Preview', mimeType: 'image/jpeg' };
 
-      if (!forceRefresh) {
-        setCache(makeCacheKey({ id, type }), result, 3600);
-      }
-
+      const result: ContentBlock[] = [{ type: 'text', text }, mediaBlock];
+      setCache(cacheKey, result, 3600);
       return { content: result };
     }
   } catch {
@@ -82,10 +65,7 @@ export async function handleGetDetails(
   }
 }
 
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-
 export function registerGetDetails(server: McpServer): void {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   server.registerTool(
     'pexels_get_details',
     {
@@ -97,6 +77,6 @@ export function registerGetDetails(server: McpServer): void {
         idempotentHint: true,
       },
     },
-    async (args: unknown) => handleGetDetails(args) as any,
+    (args) => handleGetDetails(args),
   );
 }

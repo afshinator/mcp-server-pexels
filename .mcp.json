@@ -1,0 +1,24 @@
+
+{
+  "mcpServers": {
+    "firecrawl": {
+      "command": "npx",
+      "args": ["firecrawl-mcp"],
+      "env": {
+        "FIRECRAWL_API_KEY": "${FIRECRAWL_API_KEY}"
+      }
+    },
+    "qmd": {
+      "command": "npx",
+      "args": ["@tobilu/qmd", "mcp"]
+    },
+    "eslint": {
+      "command": "npx",
+      "args": ["@eslint/mcp@latest"]
+    },
+    "stylelint": {
+      "command": "npx",
+      "args": ["stylelint-mcp@latest"]
+    }
+  }
+}

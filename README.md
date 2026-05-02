@@ -2,6 +2,9 @@
 
 A production-grade MCP server for Pexels photo and video search.
 
+[Pexels](https://www.pexels.com/api/) provides free stock photos and videos.
+
+
 ## Features
 - **Photo Search** — Search photos with filters (query, orientation, size, color, locale)
 - **Video Search** — Search videos, auto-selects HD .mp4 closest to 1920x1080
