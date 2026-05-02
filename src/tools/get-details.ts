@@ -5,19 +5,25 @@ import { fetchPhotoDetails, fetchVideoDetails } from '../shared/api-client.js';
 import { getFromCache, setCache, makeCacheKey } from '../shared/cache.js';
 import { chooseBestVideo } from '../shared/video-selector.js';
 import { formatApiError } from '../shared/errors.js';
+import { logDebug } from '../shared/logger.js';
 import * as z from 'zod';
 
 export async function handleGetDetails(
   args: z.infer<typeof getDetailsSchema>,
 ): Promise<CallToolResult> {
+  const start = Date.now();
   const { id, type, force_refresh: forceRefresh } = args;
   const cacheKey = makeCacheKey({ id, type });
+
+  logDebug('tool: pexels_get_details', 'id:', id, 'type:', type);
 
   if (!forceRefresh) {
     const cached = getFromCache<ContentBlock[]>(cacheKey);
     if (cached) {
+      logDebug('cache: HIT', 'key:', cacheKey, `${Date.now() - start}ms`);
       return { content: cached };
     }
+    logDebug('cache: MISS', 'key:', cacheKey);
   }
 
   try {
@@ -54,6 +60,7 @@ export async function handleGetDetails(
       ];
 
       setCache(cacheKey, result, 3600);
+      logDebug('result:', 'type: photo', 'id:', id, `${Date.now() - start}ms`);
       return { content: result };
     } else {
       const video = await fetchVideoDetails(id);
@@ -91,9 +98,11 @@ export async function handleGetDetails(
         { type: 'text', text: JSON.stringify(structured) },
       ];
       setCache(cacheKey, result, 3600);
+      logDebug('result:', 'type: video', 'id:', id, `${Date.now() - start}ms`);
       return { content: result };
     }
   } catch (error) {
+    logDebug('error:', error instanceof Error ? error.message : String(error));
     return formatApiError(error);
   }
 }

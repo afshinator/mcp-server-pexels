@@ -4,6 +4,7 @@ import { photoSearchSchema, photoOutputSchema, photoSearchOutputSchema } from '.
 import { fetchPhotoSearch } from '../shared/api-client.js';
 import { getFromCache, setCache, makeCacheKey } from '../shared/cache.js';
 import { formatApiError } from '../shared/errors.js';
+import { logDebug } from '../shared/logger.js';
 import type { PexelsPhoto } from '../shared/types.js';
 import * as z from 'zod';
 
@@ -43,6 +44,7 @@ export function formatPhotoResult(photo: PexelsPhoto): ContentBlock[] {
 export async function handlePhotoSearch(
   args: z.infer<typeof photoSearchSchema>,
 ): Promise<CallToolResult> {
+  const start = Date.now();
   const forceRefresh = args.force_refresh ?? false;
   const params = {
     query: args.query,
@@ -53,13 +55,17 @@ export async function handlePhotoSearch(
     per_page: args.per_page || 5,
   };
 
+  logDebug('tool: pexels_search_photos', 'params:', JSON.stringify(params));
+
   const cacheKey = makeCacheKey(params);
 
   if (!forceRefresh) {
     const cached = getFromCache<ContentBlock[]>(cacheKey);
     if (cached) {
+      logDebug('cache: HIT', 'key:', cacheKey, `${Date.now() - start}ms`);
       return { content: cached };
     }
+    logDebug('cache: MISS', 'key:', cacheKey);
   }
 
   try {
@@ -69,8 +75,10 @@ export async function handlePhotoSearch(
     const structured = { results: photos.map(buildPhotoStructuredData) };
     contentBlocks.push({ type: 'text', text: JSON.stringify(structured) });
     setCache(cacheKey, contentBlocks, 600);
+    logDebug('result:', 'count:', photos.length, `${Date.now() - start}ms`);
     return { content: contentBlocks };
   } catch (error) {
+    logDebug('error:', error instanceof Error ? error.message : String(error));
     return formatApiError(error);
   }
 }

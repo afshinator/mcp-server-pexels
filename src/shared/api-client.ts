@@ -6,6 +6,7 @@ import type {
   VideoSearchParams,
 } from './types.js';
 import { MissingKeyError, PexelsApiError } from './errors.js';
+import { logDebug } from './logger.js';
 
 const API_BASE = 'https://api.pexels.com';
 
@@ -22,11 +23,14 @@ async function fetchPexels<T>(endpoint: string, params: Record<string, string | 
     }
   });
 
+  logDebug('api:', endpoint, 'params:', JSON.stringify(params));
+
   const response = await fetch(url.toString(), {
     headers: { Authorization: apiKey },
   });
 
   if (!response.ok) {
+    logDebug('api error:', endpoint, response.status, response.statusText);
     throw new PexelsApiError(response.status, response.statusText, response.headers);
   }
 
