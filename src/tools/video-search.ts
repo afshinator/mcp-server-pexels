@@ -1,12 +1,29 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { ContentBlock, CallToolResult } from '../shared/types.js';
-import { videoSearchSchema } from '../utils/validation.js';
+import { videoSearchSchema, videoOutputSchema, videoSearchOutputSchema } from '../utils/validation.js';
 import { fetchVideoSearch } from '../shared/api-client.js';
 import { getFromCache, setCache, makeCacheKey } from '../shared/cache.js';
 import { chooseBestVideo } from '../shared/video-selector.js';
 import { formatApiError } from '../shared/errors.js';
 import type { PexelsVideo } from '../shared/types.js';
 import * as z from 'zod';
+
+export function buildVideoStructuredData(video: PexelsVideo): z.infer<typeof videoOutputSchema> {
+  const bestFile = chooseBestVideo(video.video_files);
+  const validMp4 = bestFile?.file_type === 'video/mp4' ? bestFile : undefined;
+  return {
+    id: video.id,
+    kind: 'video',
+    creatorName: video.user.name,
+    creatorUrl: video.user.url,
+    pageUrl: video.url,
+    previewUrl: video.image,
+    mediaUrl: validMp4?.link || video.image,
+    mediaMimeType: validMp4 ? 'video/mp4' : 'image/jpeg',
+    dimensions: { width: video.width, height: video.height },
+    durationSeconds: video.duration,
+  };
+}
 
 export function formatVideoResult(video: PexelsVideo): ContentBlock[] {
   const bestFile = chooseBestVideo(video.video_files);
@@ -51,9 +68,11 @@ export async function handleVideoSearch(
   try {
     const response = await fetchVideoSearch(params);
     const videos = response.videos?.slice(0, params.per_page) || [];
-    const results = videos.flatMap(formatVideoResult);
-    setCache(cacheKey, results, 600);
-    return { content: results };
+    const contentBlocks = videos.flatMap(formatVideoResult);
+    const structured = { results: videos.map(buildVideoStructuredData) };
+    contentBlocks.push({ type: 'text', text: JSON.stringify(structured) });
+    setCache(cacheKey, contentBlocks, 600);
+    return { content: contentBlocks };
   } catch (error) {
     return formatApiError(error);
   }
@@ -67,6 +86,7 @@ export function registerVideoSearch(server: McpServer): void {
       description:
         'Search for stock videos by query with optional filters. Returns HD-quality .mp4 links with mandatory attribution.',
       inputSchema: videoSearchSchema,
+      outputSchema: videoSearchOutputSchema,
       annotations: {
         readOnlyHint: true,
         idempotentHint: true,

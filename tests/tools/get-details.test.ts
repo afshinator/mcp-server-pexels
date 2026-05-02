@@ -54,12 +54,20 @@ afterEach(() => server.resetHandlers());
 
 describe('Get Details Tool', () => {
   describe('photo details', () => {
-    it('returns text and resource_link blocks for a photo', async () => {
+    it('returns text, resource_link, and structured JSON blocks for a photo', async () => {
       const result = await handleGetDetails({ id: 100, type: 'photo' });
       expect(result.isError).toBeUndefined();
-      expect(result.content).toHaveLength(2);
+      expect(result.content).toHaveLength(3);
       expect(result.content[0].type).toBe('text');
       expect(result.content[1].type).toBe('resource_link');
+      expect(result.content[2].type).toBe('text');
+
+      const jsonBlock = result.content[2] as { type: 'text'; text: string };
+      const parsed = JSON.parse(jsonBlock.text);
+      expect(parsed.kind).toBe('photo');
+      expect(parsed.id).toBe(100);
+      expect(parsed.creatorName).toBe('Jane Smith');
+      expect(parsed.dimensions).toEqual({ width: 3000, height: 2000 });
     });
 
     it('uses photographer_url from API for attribution', async () => {
@@ -97,12 +105,18 @@ describe('Get Details Tool', () => {
   });
 
   describe('video details', () => {
-    it('returns text and resource_link blocks for a video', async () => {
+    it('returns text, resource_link, and structured JSON blocks for a video', async () => {
       const result = await handleGetDetails({ id: 200, type: 'video' });
       expect(result.isError).toBeUndefined();
-      expect(result.content).toHaveLength(2);
+      expect(result.content).toHaveLength(3);
       const link = result.content[1] as { type: 'resource_link'; mimeType: string };
       expect(link.mimeType).toBe('video/mp4');
+
+      const jsonBlock = result.content[2] as { type: 'text'; text: string };
+      const parsed = JSON.parse(jsonBlock.text);
+      expect(parsed.kind).toBe('video');
+      expect(parsed.id).toBe(200);
+      expect(parsed.durationSeconds).toBe(30);
     });
 
     it('uses user.url from API for attribution', async () => {

@@ -71,6 +71,19 @@ describe('Video Search Tool', () => {
     });
   });
 
+  describe('structured output', () => {
+    it('includes a structured JSON block at the end of content', async () => {
+      const result = await handleVideoSearch({ query: 'ocean' });
+      const lastBlock = result.content[result.content.length - 1] as { type: 'text'; text: string };
+      expect(lastBlock.type).toBe('text');
+      const parsed = JSON.parse(lastBlock.text);
+      expect(parsed).toHaveProperty('results');
+      expect(Array.isArray(parsed.results)).toBe(true);
+      expect(parsed.results.length).toBeGreaterThan(0);
+      expect(parsed.results[0].kind).toBe('video');
+    });
+  });
+
   describe('handleVideoSearch', () => {
     it('fetches and returns results on cache miss', async () => {
       const result = await handleVideoSearch({ query: 'ocean' });

@@ -34,3 +34,42 @@ export const getDetailsSchema = z.object({
   type: z.enum(['photo', 'video']),
   force_refresh: z.boolean().optional(),
 });
+
+// --- Output schemas (for structuredContent) ---
+
+export const photoOutputSchema = z.object({
+  id: z.number(),
+  kind: z.literal('photo'),
+  creatorName: z.string(),
+  creatorUrl: z.string(),
+  pageUrl: z.string(),
+  previewUrl: z.string(),
+  mediaUrl: z.string(),
+  mediaMimeType: z.literal('image/jpeg'),
+  dimensions: z.object({ width: z.number(), height: z.number() }),
+  avgColor: z.string(),
+  alt: z.string(),
+});
+
+export const photoSearchOutputSchema = z.object({
+  results: z.array(photoOutputSchema),
+});
+
+export const videoOutputSchema = z.object({
+  id: z.number(),
+  kind: z.literal('video'),
+  creatorName: z.string(),
+  creatorUrl: z.string(),
+  pageUrl: z.string(),
+  previewUrl: z.string(),
+  mediaUrl: z.string(),
+  mediaMimeType: z.string(),
+  dimensions: z.object({ width: z.number(), height: z.number() }),
+  durationSeconds: z.number(),
+});
+
+export const videoSearchOutputSchema = z.object({
+  results: z.array(videoOutputSchema),
+});
+
+export const getDetailsOutputSchema = z.union([photoOutputSchema, videoOutputSchema]);
