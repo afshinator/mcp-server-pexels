@@ -1,6 +1,6 @@
 # mcp-server-pexels
 
-A well-structured MCP server for Pexels photo and video search.
+An MCP server for Pexels stock photo and video search.  Optimized for LLMs.
 
 [Pexels](https://www.pexels.com/api/) provides free stock photos and videos.
 
@@ -17,7 +17,6 @@ A well-structured MCP server for Pexels photo and video search.
 - Node.js v20+
 - Pexels API key (free at [pexels.com/api](https://www.pexels.com/api/))
 
-> **Cloning note:** If plain `git clone` fails due to auth friction (e.g., in Docker containers), use `gh repo clone afshinator/mcp-server-pexels` instead.
 
 ## Quick Start (2 minutes)
 
