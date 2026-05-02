@@ -1,5 +1,12 @@
 import type { CallToolResult } from './types.js';
 
+export class MissingKeyError extends Error {
+  constructor() {
+    super('PEXELS_API_KEY environment variable is not set.');
+    this.name = 'MissingKeyError';
+  }
+}
+
 export class PexelsApiError extends Error {
   constructor(
     public readonly status: number,
@@ -51,6 +58,13 @@ export function formatApiError(error: unknown): CallToolResult {
 
     return {
       content: [{ type: 'text', text: `Pexels API is temporarily unavailable (HTTP ${status}). Try again shortly.` }],
+      isError: true,
+    };
+  }
+
+  if (error instanceof MissingKeyError) {
+    return {
+      content: [{ type: 'text', text: 'PEXELS_API_KEY is not set. Add it to your environment or MCP client config (e.g., claude_desktop_config.json).' }],
       isError: true,
     };
   }

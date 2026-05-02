@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseRateLimit, formatPexelsError, formatApiError, PexelsApiError } from '../../src/shared/errors.js';
+import { parseRateLimit, formatPexelsError, formatApiError, PexelsApiError, MissingKeyError } from '../../src/shared/errors.js';
 
 describe('Error Handling', () => {
   describe('parseRateLimit', () => {
@@ -114,6 +114,14 @@ describe('Error Handling', () => {
       const text = result.content[0] as { type: 'text'; text: string };
       expect(result.isError).toBe(true);
       expect(text.text.length).toBeGreaterThan(0);
+    });
+
+    it('formats MissingKeyError with a hint to set PEXELS_API_KEY', () => {
+      const result = formatApiError(new MissingKeyError());
+      const text = result.content[0] as { type: 'text'; text: string };
+      expect(result.isError).toBe(true);
+      expect(text.text.toLowerCase()).toContain('pexels_api_key');
+      expect(text.text.toLowerCase()).toContain('set');
     });
   });
 });

@@ -5,14 +5,14 @@ import type {
   PhotoSearchParams,
   VideoSearchParams,
 } from './types.js';
-import { PexelsApiError } from './errors.js';
+import { MissingKeyError, PexelsApiError } from './errors.js';
 
 const API_BASE = 'https://api.pexels.com';
 
 async function fetchPexels<T>(endpoint: string, params: Record<string, string | number | boolean | undefined>): Promise<T> {
   const apiKey = process.env.PEXELS_API_KEY;
   if (!apiKey) {
-    throw new Error('PEXELS_API_KEY environment variable is required. Set it in your environment or .env file.');
+    throw new MissingKeyError();
   }
 
   const url = new URL(`${API_BASE}${endpoint}`);
