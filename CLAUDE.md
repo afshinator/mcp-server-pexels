@@ -67,7 +67,7 @@ npx @modelcontextprotocol/inspector # ad-hoc inspector without npm script
 **Transport:** Stdio JSON-RPC (no HTTP server). The entry point (`src/index.ts`) creates an `McpServer` instance with metadata and instructions, registers tools, then connects via `StdioServerTransport`.
 
 **Server instructions string** (passed to `McpServer` constructor — shown to the consuming agent at connection time):
-> "This server provides access to the Pexels library of high-quality stock photos and videos. Every result includes mandatory photographer attribution — always display it. Each tool response contains two content blocks per result: (1) a text block with metadata, mandatory attribution, and a markdown image link (fallback), and (2) a resource_link block with a proper mimeType pointing to the thumbnail or video file. Additionally, the last content block is a JSON text block with structured data matching the tool's outputSchema. Pexels rate limit is 200 requests/hour; the server caches results to preserve quota."
+> "This server provides access to the Pexels library of high-quality stock photos and videos. Every result includes mandatory photographer attribution — always display it. Each tool response contains two content blocks per result: (1) a text block with metadata, mandatory attribution, and a markdown image link (fallback), and (2) a resource_link block with a proper mimeType pointing to the thumbnail or video file. Additionally, the last content block is a JSON text block with structured data usable by downstream agents and UI builders. Pexels rate limit is 200 requests/hour; the server caches results to preserve quota."
 
 **Project Structure:** Modular by tool with pure functions for testability:
 - `src/index.ts` — entry point, McpServer setup
@@ -102,7 +102,7 @@ server.registerTool('pexels_search_photos', {
 1. A `type: "text"` block — Markdown with metadata, hardcoded attribution (`Photo by [Photographer] on Pexels`), and a markdown image link `![Preview](src.medium_url)` as fallback.
 2. A `type: "resource_link"` block — points to the thumbnail image (photo) or best HD .mp4 (video), with `mimeType` set correctly.
 
-After all result blocks, the last content block is a JSON text block containing structured data matching the tool's `outputSchema`. Search tools wrap results in `{ results: [...] }`; get-details returns a single object.
+After all result blocks, the last content block is a JSON text block containing structured data (id, kind, creatorName, dimensions, URLs). Search tools wrap results in `{ results: [...] }`; get-details returns a single object.
 
 **Content block rationale (fixed 2026-05-02):** Remote images and videos are provided as `resource_link` content blocks (valid per MCP spec), not `{ type: 'image', url }` (which the SDK rejects with -32602). The markdown image link in the text block remains as a fallback for clients that do not render `resource_link` blocks. Base64-encoding was ruled out (extra fetches, ~1MB bloat per response). Full decision in `original-specs.md §3b`.
 

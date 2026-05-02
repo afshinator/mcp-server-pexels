@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { getFromCache, setCache, makeCacheKey } from '../../src/shared/cache.js';
 
 describe('Cache Module', () => {
@@ -34,5 +34,33 @@ describe('Cache Module', () => {
     expect(getFromCache<string>('str-key')).toBe('hello');
     setCache('num-key', 99);
     expect(getFromCache<number>('num-key')).toBe(99);
+  });
+
+  describe('TTL expiry', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should return value before TTL expires', () => {
+      vi.useFakeTimers();
+      setCache('ttl-test', 'fresh', 60);
+      expect(getFromCache<string>('ttl-test')).toBe('fresh');
+    });
+
+    it('should return undefined after TTL expires', () => {
+      vi.useFakeTimers();
+      setCache('ttl-test', 'stale', 1);
+      vi.advanceTimersByTime(1100); // past the 1-second TTL
+      expect(getFromCache<string>('ttl-test')).toBeUndefined();
+    });
+
+    it('should re-fetch after cache expiry via handler', async () => {
+      vi.useFakeTimers();
+      setCache('ttl-test', 'expired-data', 1);
+      vi.advanceTimersByTime(1100);
+      expect(getFromCache<string>('ttl-test')).toBeUndefined();
+      setCache('ttl-test', 'fresh-data', 60);
+      expect(getFromCache<string>('ttl-test')).toBe('fresh-data');
+    });
   });
 });

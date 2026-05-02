@@ -1,6 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { ContentBlock, CallToolResult } from '../shared/types.js';
-import { photoSearchSchema, photoOutputSchema, photoSearchOutputSchema } from '../utils/validation.js';
+import { photoSearchSchema, photoOutputSchema } from '../utils/validation.js';
 import { fetchPhotoSearch } from '../shared/api-client.js';
 import { getFromCache, setCache, makeCacheKey } from '../shared/cache.js';
 import { formatApiError } from '../shared/errors.js';
@@ -91,7 +91,6 @@ export function registerPhotoSearch(server: McpServer): void {
       description:
         'Search for stock photos by query with optional filters for orientation, size, color, and locale. Returns 3-5 results with mandatory photographer attribution.',
       inputSchema: photoSearchSchema,
-      outputSchema: photoSearchOutputSchema,
       annotations: {
         readOnlyHint: true,
         idempotentHint: true,

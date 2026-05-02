@@ -51,10 +51,6 @@ export const photoOutputSchema = z.object({
   alt: z.string(),
 });
 
-export const photoSearchOutputSchema = z.object({
-  results: z.array(photoOutputSchema),
-});
-
 export const videoOutputSchema = z.object({
   id: z.number(),
   kind: z.literal('video'),
@@ -67,9 +63,3 @@ export const videoOutputSchema = z.object({
   dimensions: z.object({ width: z.number(), height: z.number() }),
   durationSeconds: z.number(),
 });
-
-export const videoSearchOutputSchema = z.object({
-  results: z.array(videoOutputSchema),
-});
-
-export const getDetailsOutputSchema = z.union([photoOutputSchema, videoOutputSchema]);

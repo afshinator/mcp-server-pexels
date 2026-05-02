@@ -110,7 +110,7 @@ npm test          # run tests
 
 Tested with `@modelcontextprotocol/sdk` v1.29+ via `StdioClientTransport`. The integration test suite spawns the built server and validates every tool call against the SDK's `CallToolResultSchema` and `ContentBlockSchema`.
 
-Output schemas (`outputSchema`) are declared in each tool registration — MCP clients and agent frameworks can use them to interpret the structured JSON block returned as the last content element in every successful response.
+A structured JSON block is appended as the last content element in every successful response, containing typed data (id, kind, creatorName, dimensions, URLs). Downstream clients and agent frameworks can parse this block directly instead of regex-parsing the markdown text.
 
 ## Future Improvements
 - **Tool execution telemetry** — Add structured logging for cache hits/misses, query execution time, and error rates. This supports troubleshooting AI agents in production and demonstrates observability best practices.

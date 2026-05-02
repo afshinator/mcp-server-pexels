@@ -56,6 +56,42 @@ describe('Video Selector', () => {
     expect(result).toBeUndefined();
   });
 
+  describe('extreme edge cases', () => {
+    it('when all files are far from 1920 (e.g., < 480px), picks the closest one', () => {
+      const files: VideoFile[] = [
+        { id: 1, quality: 'hd', file_type: 'video/mp4', width: 320, height: 240, link: 'https://example.com/320.mp4' },
+        { id: 2, quality: 'hd', file_type: 'video/mp4', width: 480, height: 360, link: 'https://example.com/480.mp4' },
+        { id: 3, quality: 'hd', file_type: 'video/mp4', width: 426, height: 240, link: 'https://example.com/426.mp4' },
+      ];
+      // Closest to 1920 is 480 (distance 1440).
+      const result = chooseBestVideo(files);
+      expect(result.id).toBe(2);
+      expect(result.width).toBe(480);
+    });
+
+    it('handles a file with width=0 gracefully (distance is 1920)', () => {
+      const files: VideoFile[] = [
+        { id: 1, quality: 'hd', file_type: 'video/mp4', width: 0, height: 0, link: 'https://example.com/zero.mp4' },
+        { id: 2, quality: 'hd', file_type: 'video/mp4', width: 640, height: 480, link: 'https://example.com/640.mp4' },
+      ];
+      // width=0 is distance 1920; width=640 is distance 1280. Should pick 640.
+      const result = chooseBestVideo(files);
+      expect(result.id).toBe(2);
+      expect(result.width).toBe(640);
+    });
+
+    it('no mp4 with 3+ non-mp4 files — returns the first file', () => {
+      const files: VideoFile[] = [
+        { id: 1, quality: 'sd', file_type: 'video/webm', width: 640, height: 360, link: 'https://example.com/a.webm' },
+        { id: 2, quality: 'hd', file_type: 'video/avi', width: 1920, height: 1080, link: 'https://example.com/b.avi' },
+        { id: 3, quality: 'sd', file_type: 'video/quicktime', width: 1280, height: 720, link: 'https://example.com/c.mov' },
+      ];
+      const result = chooseBestVideo(files);
+      expect(result.id).toBe(1);
+      expect(result.file_type).toBe('video/webm');
+    });
+  });
+
   describe('tie-breaking', () => {
     it('on equal distance to 1920, should prefer larger width', () => {
       const files: VideoFile[] = [

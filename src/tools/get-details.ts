@@ -1,6 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { ContentBlock, CallToolResult } from '../shared/types.js';
-import { getDetailsSchema, photoOutputSchema, videoOutputSchema, getDetailsOutputSchema } from '../utils/validation.js';
+import { getDetailsSchema, photoOutputSchema, videoOutputSchema } from '../utils/validation.js';
 import { fetchPhotoDetails, fetchVideoDetails } from '../shared/api-client.js';
 import { getFromCache, setCache, makeCacheKey } from '../shared/cache.js';
 import { chooseBestVideo } from '../shared/video-selector.js';
@@ -114,7 +114,6 @@ export function registerGetDetails(server: McpServer): void {
       title: 'Get Pexels Details',
       description: 'Get detailed information about a specific photo or video by ID.',
       inputSchema: getDetailsSchema,
-      outputSchema: getDetailsOutputSchema,
       annotations: {
         readOnlyHint: true,
         idempotentHint: true,

@@ -1,6 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { ContentBlock, CallToolResult } from '../shared/types.js';
-import { videoSearchSchema, videoOutputSchema, videoSearchOutputSchema } from '../utils/validation.js';
+import { videoSearchSchema, videoOutputSchema } from '../utils/validation.js';
 import { fetchVideoSearch } from '../shared/api-client.js';
 import { getFromCache, setCache, makeCacheKey } from '../shared/cache.js';
 import { chooseBestVideo } from '../shared/video-selector.js';
@@ -94,7 +94,6 @@ export function registerVideoSearch(server: McpServer): void {
       description:
         'Search for stock videos by query with optional filters. Returns HD-quality .mp4 links with mandatory attribution.',
       inputSchema: videoSearchSchema,
-      outputSchema: videoSearchOutputSchema,
       annotations: {
         readOnlyHint: true,
         idempotentHint: true,

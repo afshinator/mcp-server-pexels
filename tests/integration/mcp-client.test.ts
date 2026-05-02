@@ -27,7 +27,7 @@ beforeAll(async () => {
   transport = new StdioClientTransport({
     command: 'node',
     args: [BUILD_ENTRY],
-    env: { ...process.env, PEXELS_API_KEY: 'integration-test-fake-key' },
+    env: { ...process.env, PEXELS_API_KEY: '' },
     stderr: 'pipe',
   });
 
@@ -46,17 +46,24 @@ describe('MCP server integration', () => {
     expect(names).toEqual(['pexels_get_details', 'pexels_search_photos', 'pexels_search_videos']);
   });
 
-  it('tools/call succeeds and returns valid CallToolResult structure', async () => {
-    // Fake API key → 401 from Pexels → error response, but shape must still be valid
+  it('tools/call with bad API key returns isError=true and actionable message', async () => {
+    // Fake API key → 401 from Pexels → must return clean CallToolResult, not a crash
     const result = await client.callTool({
       name: 'pexels_search_photos',
       arguments: { query: 'ocean' },
     });
 
+    // Protocol-level shape must be valid (no -32602)
     const parsed = CallToolResultSchema.safeParse(result);
     expect(parsed.success, `CallToolResult schema invalid: ${JSON.stringify(parsed)}`).toBe(true);
+
+    // Must be a properly flagged error with an LLM-readable message
+    expect(result.isError).toBe(true);
     expect(result.content).toBeDefined();
     expect(Array.isArray(result.content)).toBe(true);
+    const textBlock = result.content[0] as { type: 'text'; text: string };
+    expect(textBlock.type).toBe('text');
+    expect(textBlock.text.toLowerCase()).toContain('pexels_api_key');
   });
 
   it('tools/call does not throw -32602 MCP error (regression for invalid image blocks)', async () => {
