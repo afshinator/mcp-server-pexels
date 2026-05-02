@@ -55,4 +55,36 @@ describe('Video Selector', () => {
     const result = chooseBestVideo(files);
     expect(result).toBeUndefined();
   });
+
+  describe('tie-breaking', () => {
+    it('on equal distance to 1920, should prefer larger width', () => {
+      const files: VideoFile[] = [
+        { id: 1, quality: 'hd', file_type: 'video/mp4', width: 1280, height: 720, link: 'https://example.com/1280.mp4' },
+        { id: 2, quality: 'hd', file_type: 'video/mp4', width: 2560, height: 1440, link: 'https://example.com/2560.mp4' },
+      ];
+      // Both are distance 640 from 1920. Tie should go to larger width (2560).
+      const result = chooseBestVideo(files);
+      expect(result.id).toBe(2);
+      expect(result.width).toBe(2560);
+    });
+
+    it('on equal distance AND equal width, first in array wins (stable tie)', () => {
+      const files: VideoFile[] = [
+        { id: 1, quality: 'hd', file_type: 'video/mp4', width: 1920, height: 1080, link: 'https://example.com/1920a.mp4' },
+        { id: 2, quality: 'hd', file_type: 'video/mp4', width: 1920, height: 1080, link: 'https://example.com/1920b.mp4' },
+      ];
+      const result = chooseBestVideo(files);
+      expect(result.id).toBe(1);
+    });
+
+    it('among sd mp4 files on tie, prefers larger width', () => {
+      const files: VideoFile[] = [
+        { id: 1, quality: 'sd', file_type: 'video/mp4', width: 1280, height: 720, link: 'https://example.com/1280.mp4' },
+        { id: 2, quality: 'hd', file_type: 'video/mp4', width: 2560, height: 1440, link: 'https://example.com/2560.mp4' },
+      ];
+      // Both hd+sd? No — hd filter applies first. Only id=2 (hd) is a candidate.
+      const result = chooseBestVideo(files);
+      expect(result.id).toBe(2);
+    });
+  });
 });
