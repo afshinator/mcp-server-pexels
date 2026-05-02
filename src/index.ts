@@ -13,7 +13,7 @@ const server = new McpServer(
   {
     capabilities: { logging: {} },
     instructions:
-      'This server provides access to the Pexels library of high-quality stock photos and videos. Every result includes mandatory photographer attribution — always display it. Each tool response contains two content blocks per result: (1) a text block with metadata and a markdown image link, and (2) an image block with a url field pointing to the medium-resolution thumbnail. If the image block does not render in your client, use the markdown image link in the text block. Pexels rate limit is 200 requests/hour; the server caches results to preserve quota. Use force_refresh parameter to bypass cache.',
+      'This server provides access to the Pexels library of high-quality stock photos and videos. Every result includes mandatory photographer attribution — always display it. Each tool response contains two content blocks per result: (1) a text block with metadata, mandatory attribution, and a markdown image link (fallback), and (2) a resource_link block with a proper mimeType pointing to the thumbnail or video file. Additionally, the last content block is a JSON text block with structured data (id, kind, creatorName, dimensions, URLs) matching the tool\'s outputSchema. Pexels rate limit is 200 requests/hour; the server caches results to preserve quota. Use force_refresh parameter to bypass cache.',
   },
 );
 

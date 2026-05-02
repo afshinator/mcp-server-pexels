@@ -67,7 +67,7 @@ npx @modelcontextprotocol/inspector # ad-hoc inspector without npm script
 **Transport:** Stdio JSON-RPC (no HTTP server). The entry point (`src/index.ts`) creates an `McpServer` instance with metadata and instructions, registers tools, then connects via `StdioServerTransport`.
 
 **Server instructions string** (passed to `McpServer` constructor — shown to the consuming agent at connection time):
-> "This server provides access to the Pexels library of high-quality stock photos and videos. Every result includes mandatory photographer attribution — always display it. Each tool response contains two content blocks per result: (1) a text block with metadata and a markdown image link, and (2) an image block with a `url` field pointing to the medium-resolution thumbnail. If the image block does not render in your client, use the markdown image link in the text block. Pexels rate limit is 200 requests/hour; the server caches results to preserve quota."
+> "This server provides access to the Pexels library of high-quality stock photos and videos. Every result includes mandatory photographer attribution — always display it. Each tool response contains two content blocks per result: (1) a text block with metadata, mandatory attribution, and a markdown image link (fallback), and (2) a resource_link block with a proper mimeType pointing to the thumbnail or video file. Additionally, the last content block is a JSON text block with structured data matching the tool's outputSchema. Pexels rate limit is 200 requests/hour; the server caches results to preserve quota."
 
 **Project Structure:** Modular by tool with pure functions for testability:
 - `src/index.ts` — entry point, McpServer setup
@@ -98,11 +98,13 @@ server.registerTool('pexels_search_photos', {
 
 **Caching:** `node-cache` wraps every outbound Pexels fetch. Cache keys are derived from the full serialized parameter set. TTLs: 10 min for searches, 60 min for ID lookups. All search tools expose a `force_refresh: boolean` parameter to bypass the cache.
 
-**Response shape:** Every tool call returns a `CallToolResult` with `content` array:
+**Response shape:** Every tool call returns a `CallToolResult` with `content` array. For each result:
 1. A `type: "text"` block — Markdown with metadata, hardcoded attribution (`Photo by [Photographer] on Pexels`), and a markdown image link `![Preview](src.medium_url)` as fallback.
-2. A `type: "image"` block — `{ type: 'image', url: src.medium_url }` type-asserted past SDK types (renders in Claude Desktop / Claude.ai). For videos, the selected `.mp4` link URL.
+2. A `type: "resource_link"` block — points to the thumbnail image (photo) or best HD .mp4 (video), with `mimeType` set correctly.
 
-**Image content rationale (decided 2026-05-01):** The MCP SDK `ImageContent` only types `data`/`mimeType`, but modern clients support `url` for remote images. We use a hybrid: the `url` field on the image block renders visually; the same URL in the text block is the fallback. Base64-encoding was ruled out (5 extra fetches, ~1MB bloat per response). Full decision in `original-specs.md §3b`.
+After all result blocks, the last content block is a JSON text block containing structured data matching the tool's `outputSchema`. Search tools wrap results in `{ results: [...] }`; get-details returns a single object.
+
+**Content block rationale (fixed 2026-05-02):** Remote images and videos are provided as `resource_link` content blocks (valid per MCP spec), not `{ type: 'image', url }` (which the SDK rejects with -32602). The markdown image link in the text block remains as a fallback for clients that do not render `resource_link` blocks. Base64-encoding was ruled out (extra fetches, ~1MB bloat per response). Full decision in `original-specs.md §3b`.
 
 **Video selection logic:** Pure function `chooseBestVideo(files)` — iterate `video_files`, filter to `.mp4` only, prefer `quality === "hd"`, then pick the file whose width is closest to 1920.
 

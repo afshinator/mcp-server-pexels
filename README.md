@@ -100,9 +100,15 @@ npm test          # run tests
 | **Cache-first architecture** | Pexels API allows 200 requests/hour. Caching (10m TTL for searches, 60m for ID lookups) preserves quota, reduces latency to <5ms on cache hit, and demonstrates awareness of API costs — critical for production AI systems where agents frequently re-request the same context. |
 | **Fail-fast at call time** | MCP servers are spawned as child processes — starting is not the time to fail. Server warns on startup but fails gracefully on first tool call with structured `isError: true`. |
 | **Zod validation schemas** | MCP v2 SDK requires `z.object()` wrappers. Catches invalid input before it reaches the API. |
-| **Dual content blocks** | MCP spec allows text + image blocks per result. Image block may not render in all clients — markdown link in text block is the fallback. |
+| **resource_link for media** | Remote images and videos are provided as MCP `resource_link` content blocks with proper mimeType. The markdown image link in the text block remains as a fallback for clients that do not render `resource_link`. |
 | **Pure video selection** | Video selection logic isolated in `video-selector.ts` — testable independently from tool handler. |
 | **Hardcoded attribution** | Required by Pexels Terms of Service. Embedded in every text response. |
+
+## Compatibility
+
+Tested with `@modelcontextprotocol/sdk` v1.29+ via `StdioClientTransport`. The integration test suite spawns the built server and validates every tool call against the SDK's `CallToolResultSchema` and `ContentBlockSchema`.
+
+Output schemas (`outputSchema`) are declared in each tool registration — MCP clients and agent frameworks can use them to interpret the structured JSON block returned as the last content element in every successful response.
 
 ## Future Improvements
 - **Tool execution telemetry** — Add structured logging for cache hits/misses, query execution time, and error rates. This supports troubleshooting AI agents in production and demonstrates observability best practices.
