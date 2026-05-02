@@ -5,6 +5,7 @@ import type {
   PhotoSearchParams,
   VideoSearchParams,
 } from './types.js';
+import { PexelsApiError } from './errors.js';
 
 const API_BASE = 'https://api.pexels.com';
 const API_KEY = process.env.PEXELS_API_KEY;
@@ -32,7 +33,7 @@ async function fetchPexels<T>(endpoint: string, params: Record<string, string | 
   });
 
   if (!response.ok) {
-    throw new Error(`Pexels API error: ${response.status} ${response.statusText}`);
+    throw new PexelsApiError(response.status, response.statusText, response.headers);
   }
 
   return response.json() as Promise<T>;

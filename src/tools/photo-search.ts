@@ -3,7 +3,7 @@ import type { ContentBlock, CallToolResult } from '../shared/types.js';
 import { photoSearchSchema } from '../utils/validation.js';
 import { fetchPhotoSearch } from '../shared/api-client.js';
 import { getFromCache, setCache, makeCacheKey } from '../shared/cache.js';
-import { formatPexelsError } from '../shared/errors.js';
+import { formatApiError } from '../shared/errors.js';
 import type { PexelsPhoto } from '../shared/types.js';
 import * as z from 'zod';
 
@@ -51,8 +51,8 @@ export async function handlePhotoSearch(
     const results = photos.flatMap(formatPhotoResult);
     setCache(cacheKey, results, 600);
     return { content: results };
-  } catch {
-    return formatPexelsError('not_found');
+  } catch (error) {
+    return formatApiError(error);
   }
 }
 

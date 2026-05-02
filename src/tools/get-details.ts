@@ -4,7 +4,7 @@ import { getDetailsSchema } from '../utils/validation.js';
 import { fetchPhotoDetails, fetchVideoDetails } from '../shared/api-client.js';
 import { getFromCache, setCache, makeCacheKey } from '../shared/cache.js';
 import { chooseBestVideo } from '../shared/video-selector.js';
-import { formatPexelsError } from '../shared/errors.js';
+import { formatApiError } from '../shared/errors.js';
 import * as z from 'zod';
 
 export async function handleGetDetails(
@@ -60,8 +60,8 @@ export async function handleGetDetails(
       setCache(cacheKey, result, 3600);
       return { content: result };
     }
-  } catch {
-    return formatPexelsError('not_found');
+  } catch (error) {
+    return formatApiError(error);
   }
 }
 

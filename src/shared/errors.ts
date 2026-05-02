@@ -1,5 +1,16 @@
 import type { CallToolResult } from './types.js';
 
+export class PexelsApiError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly statusText: string,
+    public readonly headers: Headers,
+  ) {
+    super(`Pexels API error: ${status} ${statusText}`);
+    this.name = 'PexelsApiError';
+  }
+}
+
 export function parseRateLimit(headers: Headers): string | null {
   const resetValue = headers.get('x-ratelimit-reset');
   if (!resetValue) return null;
@@ -9,6 +20,45 @@ export function parseRateLimit(headers: Headers): string | null {
 
   const resetDate = new Date(Date.now() + resetSeconds * 1000);
   return resetDate.toLocaleTimeString();
+}
+
+export function formatApiError(error: unknown): CallToolResult {
+  if (error instanceof PexelsApiError) {
+    const { status, headers } = error;
+
+    if (status === 401) {
+      return {
+        content: [{ type: 'text', text: 'Pexels API request unauthorized. Check that PEXELS_API_KEY is set correctly in your MCP client config.' }],
+        isError: true,
+      };
+    }
+
+    if (status === 429) {
+      const resetTime = parseRateLimit(headers);
+      const retryNote = resetTime ? ` Retry after ${resetTime}.` : '';
+      return {
+        content: [{ type: 'text', text: `Pexels rate limit reached.${retryNote}` }],
+        isError: true,
+      };
+    }
+
+    if (status === 404) {
+      return {
+        content: [{ type: 'text', text: 'The requested resource was not found on Pexels.' }],
+        isError: true,
+      };
+    }
+
+    return {
+      content: [{ type: 'text', text: `Pexels API is temporarily unavailable (HTTP ${status}). Try again shortly.` }],
+      isError: true,
+    };
+  }
+
+  return {
+    content: [{ type: 'text', text: 'An unexpected error occurred while contacting Pexels.' }],
+    isError: true,
+  };
 }
 
 export function formatPexelsError(

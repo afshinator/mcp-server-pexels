@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
+import { PexelsApiError } from '../../src/shared/errors.js';
 
 // Set fake API key before importing the module under test
 process.env.PEXELS_API_KEY = 'test-api-key';
@@ -112,5 +113,60 @@ describe('API Client', () => {
     const result = await fetchPhotoDetails(1);
     expect(result.id).toBe(1);
     expect(result.photographer).toBe('Test Photographer');
+  });
+});
+
+describe('API Client error handling', () => {
+  it('throws PexelsApiError with status 401 on unauthorized', async () => {
+    server.use(
+      http.get('https://api.pexels.com/v1/search', () =>
+        new HttpResponse(null, { status: 401, statusText: 'Unauthorized' }),
+      ),
+    );
+    const { fetchPhotoSearch } = await import('../../src/shared/api-client.js');
+    try {
+      await fetchPhotoSearch({ query: 'test' });
+      expect.fail('should have thrown');
+    } catch (error) {
+      expect(error).toBeInstanceOf(PexelsApiError);
+      expect((error as PexelsApiError).status).toBe(401);
+    }
+  });
+
+  it('throws PexelsApiError with status 429 and preserves rate-limit headers', async () => {
+    server.use(
+      http.get('https://api.pexels.com/v1/search', () =>
+        new HttpResponse(null, {
+          status: 429,
+          statusText: 'Too Many Requests',
+          headers: { 'x-ratelimit-reset': '3600' },
+        }),
+      ),
+    );
+    const { fetchPhotoSearch } = await import('../../src/shared/api-client.js');
+    try {
+      await fetchPhotoSearch({ query: 'test' });
+      expect.fail('should have thrown');
+    } catch (error) {
+      expect(error).toBeInstanceOf(PexelsApiError);
+      expect((error as PexelsApiError).status).toBe(429);
+      expect((error as PexelsApiError).headers.get('x-ratelimit-reset')).toBe('3600');
+    }
+  });
+
+  it('throws PexelsApiError with status 500 on server error', async () => {
+    server.use(
+      http.get('https://api.pexels.com/v1/search', () =>
+        new HttpResponse(null, { status: 500, statusText: 'Internal Server Error' }),
+      ),
+    );
+    const { fetchPhotoSearch } = await import('../../src/shared/api-client.js');
+    try {
+      await fetchPhotoSearch({ query: 'test' });
+      expect.fail('should have thrown');
+    } catch (error) {
+      expect(error).toBeInstanceOf(PexelsApiError);
+      expect((error as PexelsApiError).status).toBe(500);
+    }
   });
 });
