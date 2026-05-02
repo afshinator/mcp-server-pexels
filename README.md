@@ -1,113 +1,68 @@
-# mcp-server-pexels: FULL PROJECT SPECIFICATION & README
-
-## Design Document
-
-Complete design specification consolidated into `original-specs.md` (single source of truth).
-
-## MCP Best Practices
-
-**CLI & Configuration:**
-- No custom CLI flags — stdio MCP servers are spawned as child processes by MCP clients
-- Configuration via MCP client config files (`.mcp.json`, `claude_desktop_config.json`)
-- All logging via `console.error()` only — stdout is reserved for JSON-RPC messages
-- API keys passed via `env` field in config, never in `args`
-
-**Server Capabilities:**
-- Initialize with metadata + instructions for the LLM
-- Use `registerTool()` (MCP v2 SDK), not deprecated `tool()` method
-- Tool annotations: `readOnlyHint: true`, `idempotentHint: true` for read-only tools
-- Return `CallToolResult` with proper `content` array and `isError: true` for failures
-- Input schemas must be wrapped in `z.object()` (Zod v4)
-
-## 1. TECHNICAL SPECIFICATIONS
-- **Project Name:** mcp-server-pexels[cite: 1]
-- **Environment:** Linux Mint (Desktop/Laptop)[cite: 1]
-- **Runtime:** Node.js (v18+) with TypeScript SDK[cite: 1]
-- **Primary API:** Pexels (Photos & Videos)[cite: 1]
-- **Auth:** API Key via `PEXELS_API_KEY` environment variable[cite: 1]
-- **Base URLs:** `https://api.pexels.com/v1/` and `https://api.pexels.com/videos/`[cite: 1]
-- **Rate Limits:** 200 requests per hour[cite: 1]
-- **Namespace:** `pexels_`[cite: 1]
-
-## 2. ADVANCED LOGIC & COMPLIANCE
-- **Architecture:** Modular by tool with pure functions for testability[cite: 1]
-- **Caching:** Implement `node-cache` (TTL: 10m for searches, 60m for ID lookups).[cite: 1]
-- **Error Handling:** Catch 429 errors and return text: "Rate limit reached. Resets at [time]."[cite: 1]
-- **Video Logic:** Filter the `video_files` array for the highest resolution under or at 1080p.[cite: 1]
-- **Attribution:** Hardcode "Photo by [Photographer] on Pexels" into every text response.[cite: 1]
-- **Visuals:** Return `type: "image"` content blocks using `src.medium` for UI rendering.[cite: 1]
-
-## 3. ARCHITECTURE
-**Project Structure:** Modular by tool with pure functions for testability:
-- `src/index.ts` — entry point, McpServer setup
-- `src/tools/photo-search.ts` — `pexels_search_photos` tool
-- `src/tools/video-search.ts` — `pexels_search_videos` tool
-- `src/tools/get-details.ts` — `pexels_get_details` tool
-- `src/shared/cache.ts` — pure cache functions
-- `src/shared/api-client.ts` — pure API call functions
-- `src/shared/errors.ts` — pure error handling
-- `src/shared/types.ts` — shared TypeScript types
-- `src/shared/video-selector.ts` — pure video selection logic
-- `src/utils/validation.ts` — Zod schemas and validation helpers
-
-**Tool Registration (MCP v2 SDK):**
-- Use `registerTool()` not deprecated `tool()` method
-- Input schemas wrapped in `z.object()` (Zod v4)
-- Tool annotations: `readOnlyHint: true`, `idempotentHint: true`
-
-## 3. FULL README.md CONTENT
 # mcp-server-pexels
 
-A production-grade Model Context Protocol (MCP) server that provides AI agents with access to the Pexels library of high-quality stock photography and video.
+A production-grade MCP server for Pexels photo and video search.
 
 ## Features
-- **Photo Search**: Retrieve curated stock images with orientation, color, and size filters.[cite: 1]
-- **Video Search**: Intelligent video retrieval that automatically selects the highest quality .mp4 (prioritizing 1080p).[cite: 1]
-- **Intelligent Caching**: In-memory caching (via node-cache) to preserve your Pexels API quota.[cite: 1]
-- **Resilient Error Handling**: Graceful handling of Pexels rate limits (429) with descriptive feedback for the AI.[cite: 1]
-- **Automatic Attribution**: Every result includes mandatory photographer credits to ensure compliance.[cite: 1]
-- **Rich Media Support**: Returns both metadata and visual image content blocks for immediate rendering.[cite: 1]
+- **Photo Search** — Search photos with filters (query, orientation, size, color, locale)
+- **Video Search** — Search videos, auto-selects HD .mp4 closest to 1920x1080
+- **Get Details** — Retrieve full metadata for a photo/video by ID
+- **Intelligent Caching** — 10 min TTL for searches, 60 min for ID lookups
+- **Error Handling** — Graceful failures with helpful messages (per MCP best practices)
+- **Attribution** — Mandatory photographer credits in every result
 
 ## Prerequisites
-- Node.js (v18 or higher)[cite: 1]
-- A Pexels API Key[cite: 1]
+- Node.js v20+
+- Pexels API key (free at [pexels.com/api](https://www.pexels.com/api/))
 
-## Installation
-1. Clone the repository and navigate to the directory.[cite: 1]
-2. `npm install`[cite: 1]
-3. `npm run build`[cite: 1]
+## Quick Start
+```bash
+npm install
+npm run build
+```
 
-## Configuration (claude_desktop_config.json)
+## Configuration
+
+Add to your `.mcp.json` or `claude_desktop_config.json`:
+
+```json
 {
   "mcpServers": {
     "pexels": {
       "command": "node",
-      "args": ["/absolute/path/to/mcp-server-pexels/build/index.js"],
+      "args": ["/absolute/path/to/build/index.js"],
       "env": {
-        "PEXELS_API_KEY": "YOUR_PEXELS_API_KEY_HERE"
+        "PEXELS_API_KEY": "YOUR_API_KEY"
       }
     }
   }
 }
+```
 
-## Tools
-- **pexels_search_photos**: Search for stock photos with criteria (query, orientation, size, color, locale).[cite: 1]
-- **pexels_search_videos**: Search for stock videos with resolution filtering.[cite: 1]
-- **pexels_get_details**: Retrieve comprehensive metadata and direct links for a specific ID.[cite: 1]
+## Environment
+Set `PEXELS_API_KEY` in your environment. For local dev, create a `.env` file:
+```
+PEXELS_API_KEY=your_pexels_api_key
+```
 
 ## Development
-To run the server in development mode with the MCP Inspector: `npm run inspector`.[cite: 1]
+```bash
+npm run dev      # watch mode
+npm run inspector # MCP Inspector
+npm test          # run tests
+```
 
----
-*Note: This is an unofficial community-maintained MCP server and is not affiliated with Pexels.*
+## Tools
+| Tool | Description |
+|------|-------------|
+| `pexels_search_photos` | Search for photos by query |
+| `pexels_search_videos` | Search for videos |
+| `pexels_get_details` | Get details by ID and type |
 
-## 4. ROADMAP & TESTING
-- **Phase 1 (MVP)**: Basic photo search, caching, Zod validation, and basic Markdown attribution.[cite: 1]
-- **Phase 2 (Video)**: Resolution-aware video search and filtering; ID-based detail retrieval.[cite: 1]
-- **Phase 3 (Refinement)**: Implementation of "Curated" feed tool and `max_results` user controls.[cite: 1]
-- **Testing**: Use `msw` to mock Pexels responses for 429 and empty states; verify via MCP Inspector.[cite: 1]
+## Architecture
+- `src/index.ts` — Entry point, MCP server setup
+- `src/tools/` — Tool implementations
+- `src/shared/` — Cache, API client, errors, types, video selector
+- `src/utils/` — Zod validation schemas
 
-## 5. CRITICAL RISKS
-- **Path Config**: Absolute paths in configuration are the most common cause of failure on Linux systems.[cite: 1]
-- **Token Usage**: Returning too many results (max_results) can exhaust the LLM context window; keep default at 5.[cite: 1]
-- **Stale Content**: High TTL on caching may result in stale results for trending topics.[cite: 1]
+## License
+Unofficial community project. Not affiliated with Pexels.

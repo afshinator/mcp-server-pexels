@@ -4,7 +4,7 @@ This file provides guidance to Claude Code and other tools when working with cod
 
 ## Project Status
 
-**Phase 1 (MVP) in progress** — building from the implementation plan in `original-specs.md`.
+**Phase 1 (MVP) complete** — all implementation tasks finished.
 
 | Task | Status |
 |------|--------|
@@ -14,7 +14,12 @@ This file provides guidance to Claude Code and other tools when working with cod
 | 4. Video Selector | Done |
 | 5. Error Handling | Done |
 | 6. Validation | Done |
-| 7–12. Remaining | Pending |
+| 7. API Client | Done |
+| 8. Photo Search Tool | Done |
+| 9. Video Search Tool | Done |
+| 10. Get Details Tool | Done |
+| 11. Entry Point | Done |
+| 12. Final Verification | Done |
 
 Design specification consolidated into `original-specs.md` (single source of truth).
 
