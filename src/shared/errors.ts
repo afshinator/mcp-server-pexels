@@ -1,6 +1,6 @@
 import type { ContentBlock } from './types.js';
 
-interface CallToolResult {
+export interface CallToolResult {
   content: ContentBlock[];
   isError?: boolean;
 }

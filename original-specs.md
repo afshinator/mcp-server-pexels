@@ -1043,11 +1043,13 @@ import type { PexelsPhoto, PexelsVideo, PexelsSearchResponse, PhotoSearchParams,
 const API_BASE = 'https://api.pexels.com';
 const API_KEY = process.env.PEXELS_API_KEY;
 
-if (!API_KEY) {
-  throw new Error('PEXELS_API_KEY environment variable is required');
-}
-
 async function fetchPexels<T>(endpoint: string, params: Record<string, unknown>): Promise<T> {
+  if (!API_KEY) {
+    // Best practice: Don't throw at startup. Let server start for inspection,
+    // fail gracefully at first API call with helpful message per MCP error handling best practices.
+    throw new Error('PEXELS_API_KEY environment variable is required. Set it in your environment or .env file.');
+  }
+
   const url = new URL(`${API_BASE}${endpoint}`);
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined) {
