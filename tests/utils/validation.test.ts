@@ -44,6 +44,21 @@ describe('Validation', () => {
       expect(result.success).toBe(true);
     });
 
+    it('should accept all Pexels named colors', () => {
+      const named = ['red', 'orange', 'yellow', 'green', 'turquoise', 'blue', 'violet', 'pink', 'brown', 'black', 'gray', 'white'];
+      for (const color of named) {
+        const result = photoSearchSchema.safeParse({ query: 'cats', color });
+        expect(result.success, `expected named color "${color}" to be accepted`).toBe(true);
+      }
+    });
+
+    it('should reject invalid color names', () => {
+      for (const color of ['not-a-color', 'purple', 'cyan', 'magenta', 'beige']) {
+        const result = photoSearchSchema.safeParse({ query: 'cats', color });
+        expect(result.success, `expected invalid color "${color}" to be rejected`).toBe(false);
+      }
+    });
+
     it('should truncate query to 100 chars', () => {
       const longQuery = 'a'.repeat(200);
       const result = photoSearchSchema.safeParse({ query: longQuery });
