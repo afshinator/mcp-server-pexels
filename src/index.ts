@@ -9,6 +9,7 @@ if (!process.env.PEXELS_API_KEY) {
 }
 
 const server = new McpServer(
+  // Keep version in sync with package.json
   { name: 'mcp-server-pexels', version: '1.0.0' },
   {
     capabilities: { logging: {} },
