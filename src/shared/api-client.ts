@@ -8,14 +8,10 @@ import type {
 import { PexelsApiError } from './errors.js';
 
 const API_BASE = 'https://api.pexels.com';
-const API_KEY = process.env.PEXELS_API_KEY;
-
-if (!API_KEY) {
-  console.error('WARNING: PEXELS_API_KEY environment variable is not set');
-}
 
 async function fetchPexels<T>(endpoint: string, params: Record<string, string | number | boolean | undefined>): Promise<T> {
-  if (!API_KEY) {
+  const apiKey = process.env.PEXELS_API_KEY;
+  if (!apiKey) {
     throw new Error('PEXELS_API_KEY environment variable is required. Set it in your environment or .env file.');
   }
 
@@ -27,9 +23,7 @@ async function fetchPexels<T>(endpoint: string, params: Record<string, string | 
   });
 
   const response = await fetch(url.toString(), {
-    headers: {
-      Authorization: API_KEY || '',
-    },
+    headers: { Authorization: apiKey },
   });
 
   if (!response.ok) {

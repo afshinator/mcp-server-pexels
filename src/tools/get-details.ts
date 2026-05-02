@@ -52,8 +52,9 @@ export async function handleGetDetails(
 **Link:** ${video.url}
 ![Preview](${video.image})`;
 
-      const mediaBlock: ContentBlock = bestFile
-        ? { type: 'resource_link', uri: bestFile.link, name: 'Video', mimeType: 'video/mp4' }
+      const validMp4 = bestFile?.file_type === 'video/mp4' ? bestFile : undefined;
+      const mediaBlock: ContentBlock = validMp4
+        ? { type: 'resource_link', uri: validMp4.link, name: 'Video', mimeType: 'video/mp4' }
         : { type: 'resource_link', uri: video.image, name: 'Preview', mimeType: 'image/jpeg' };
 
       const result: ContentBlock[] = [{ type: 'text', text }, mediaBlock];

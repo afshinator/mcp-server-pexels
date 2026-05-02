@@ -1,34 +1,49 @@
-import { describe, it, expect } from 'vitest';
-import { formatPhotoResult } from '../../src/tools/photo-search.js';
-import type { PexelsPhoto, ContentBlock } from '../../src/shared/types.js';
+import { describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest';
+import { setupServer } from 'msw/node';
+import { http, HttpResponse } from 'msw';
+import { flushCache } from '../../src/shared/cache.js';
+import { formatPhotoResult, handlePhotoSearch } from '../../src/tools/photo-search.js';
+import type { PexelsPhoto } from '../../src/shared/types.js';
+
+process.env.PEXELS_API_KEY = 'test-api-key';
+
+const mockPhoto: PexelsPhoto = {
+  id: 1,
+  width: 1920,
+  height: 1080,
+  url: 'https://www.pexels.com/photo/1',
+  photographer: 'John Doe',
+  photographer_url: 'https://www.pexels.com/@johndoe',
+  photographer_id: 123,
+  avg_color: '#FF0000',
+  src: {
+    original: 'https://images.pexels.com/original.jpg',
+    large2x: 'https://images.pexels.com/large2x.jpg',
+    large: 'https://images.pexels.com/large.jpg',
+    medium: 'https://images.pexels.com/medium.jpg',
+    small: 'https://images.pexels.com/small.jpg',
+    portrait: 'https://images.pexels.com/portrait.jpg',
+    landscape: 'https://images.pexels.com/landscape.jpg',
+    tiny: 'https://images.pexels.com/tiny.jpg',
+  },
+  liked: false,
+  alt: 'A beautiful sunset',
+};
+
+const server = setupServer(
+  http.get('https://api.pexels.com/v1/search', () =>
+    HttpResponse.json({ page: 1, per_page: 1, photos: [mockPhoto], total_results: 1 }),
+  ),
+);
+
+beforeAll(() => server.listen());
+beforeEach(() => flushCache());
+afterEach(() => server.resetHandlers());
 
 describe('Photo Search Tool', () => {
   describe('formatPhotoResult', () => {
-    it('should format photo result with text and image content blocks', () => {
-      const photo: PexelsPhoto = {
-        id: 1,
-        width: 1920,
-        height: 1080,
-        url: 'https://www.pexels.com/photo/1',
-        photographer: 'John Doe',
-        photographer_url: 'https://www.pexels.com/@johndoe',
-        photographer_id: 123,
-        avg_color: '#FF0000',
-        src: {
-          original: 'https://images.pexels.com/original.jpg',
-          large2x: 'https://images.pexels.com/large2x.jpg',
-          large: 'https://images.pexels.com/large.jpg',
-          medium: 'https://images.pexels.com/medium.jpg',
-          small: 'https://images.pexels.com/small.jpg',
-          portrait: 'https://images.pexels.com/portrait.jpg',
-          landscape: 'https://images.pexels.com/landscape.jpg',
-          tiny: 'https://images.pexels.com/tiny.jpg',
-        },
-        liked: false,
-        alt: 'A beautiful sunset',
-      };
-
-      const result = formatPhotoResult(photo);
+    it('should format photo result with text and resource_link blocks', () => {
+      const result = formatPhotoResult(mockPhoto);
 
       expect(result).toHaveLength(2);
       expect(result[0].type).toBe('text');
@@ -46,30 +61,14 @@ describe('Photo Search Tool', () => {
       expect(linkBlock.mimeType).toBe('image/jpeg');
     });
 
-    it('should include markdown image link in text block', () => {
-      const photo: PexelsPhoto = {
-        id: 2,
-        width: 3000,
-        height: 2000,
-        url: 'https://www.pexels.com/photo/2',
-        photographer: 'Jane Smith',
-        photographer_url: 'https://www.pexels.com/@janesmith',
-        photographer_id: 456,
-        avg_color: '#00FF00',
-        src: {
-          original: 'https://images.pexels.com/original2.jpg',
-          large2x: 'https://images.pexels.com/large2x2.jpg',
-          large: 'https://images.pexels.com/large2.jpg',
-          medium: 'https://images.pexels.com/medium2.jpg',
-          small: 'https://images.pexels.com/small2.jpg',
-          portrait: 'https://images.pexels.com/portrait2.jpg',
-          landscape: 'https://images.pexels.com/landscape2.jpg',
-          tiny: 'https://images.pexels.com/tiny2.jpg',
-        },
-        liked: true,
-        alt: 'Mountain view',
-      };
+    it('should use photographer_url from API for attribution link', () => {
+      const result = formatPhotoResult(mockPhoto);
+      const textBlock = result[0] as { type: 'text'; text: string };
+      expect(textBlock.text).toContain('https://www.pexels.com/@johndoe');
+    });
 
+    it('should include markdown image link in text block', () => {
+      const photo: PexelsPhoto = { ...mockPhoto, id: 2, src: { ...mockPhoto.src, medium: 'https://images.pexels.com/medium2.jpg' } };
       const result = formatPhotoResult(photo);
       const textBlock = result[0] as { type: 'text'; text: string };
       const linkBlock = result[1] as { type: 'resource_link'; uri: string };
@@ -80,33 +79,87 @@ describe('Photo Search Tool', () => {
     });
 
     it('should handle photo with no alt text', () => {
-      const photo: PexelsPhoto = {
-        id: 3,
-        width: 4000,
-        height: 3000,
-        url: 'https://www.pexels.com/photo/3',
-        photographer: 'Test User',
-        photographer_url: 'https://www.pexels.com/@testuser',
-        photographer_id: 789,
-        avg_color: '#000000',
-        src: {
-          original: 'https://images.pexels.com/original3.jpg',
-          large2x: 'https://images.pexels.com/large2x3.jpg',
-          large: 'https://images.pexels.com/large3.jpg',
-          medium: 'https://images.pexels.com/medium3.jpg',
-          small: 'https://images.pexels.com/small3.jpg',
-          portrait: 'https://images.pexels.com/portrait3.jpg',
-          landscape: 'https://images.pexels.com/landscape3.jpg',
-          tiny: 'https://images.pexels.com/tiny3.jpg',
-        },
-        liked: false,
-        alt: '',
-      };
-
-      const result = formatPhotoResult(photo);
+      const result = formatPhotoResult({ ...mockPhoto, alt: '' });
       const textBlock = result[0] as { type: 'text'; text: string };
-
       expect(textBlock.text).toContain('No description');
+    });
+  });
+
+  describe('handlePhotoSearch', () => {
+    it('fetches and returns results on cache miss', async () => {
+      const result = await handlePhotoSearch({ query: 'sunsets' });
+      expect(result.isError).toBeUndefined();
+      expect(result.content.length).toBeGreaterThan(0);
+      expect(result.content[0].type).toBe('text');
+    });
+
+    it('returns cached results without hitting API on second call', async () => {
+      let apiCallCount = 0;
+      server.use(
+        http.get('https://api.pexels.com/v1/search', () => {
+          apiCallCount++;
+          return HttpResponse.json({ page: 1, per_page: 1, photos: [mockPhoto], total_results: 1 });
+        }),
+      );
+
+      await handlePhotoSearch({ query: 'cached-query' });
+      await handlePhotoSearch({ query: 'cached-query' });
+      expect(apiCallCount).toBe(1);
+    });
+
+    it('force_refresh bypasses and repopulates cache', async () => {
+      let apiCallCount = 0;
+      server.use(
+        http.get('https://api.pexels.com/v1/search', () => {
+          apiCallCount++;
+          return HttpResponse.json({ page: 1, per_page: 1, photos: [mockPhoto], total_results: 1 });
+        }),
+      );
+
+      await handlePhotoSearch({ query: 'refresh-query' });
+      await handlePhotoSearch({ query: 'refresh-query', force_refresh: true });
+      await handlePhotoSearch({ query: 'refresh-query' }); // cache hit from force_refresh write
+      expect(apiCallCount).toBe(2);
+    });
+
+    it('returns 401 error with API key hint', async () => {
+      server.use(
+        http.get('https://api.pexels.com/v1/search', () =>
+          new HttpResponse(null, { status: 401, statusText: 'Unauthorized' }),
+        ),
+      );
+      const result = await handlePhotoSearch({ query: 'unauthorized' });
+      expect(result.isError).toBe(true);
+      const text = result.content[0] as { type: 'text'; text: string };
+      expect(text.text.toLowerCase()).toContain('pexels_api_key');
+    });
+
+    it('returns 429 rate-limit error with retry guidance', async () => {
+      server.use(
+        http.get('https://api.pexels.com/v1/search', () =>
+          new HttpResponse(null, {
+            status: 429,
+            statusText: 'Too Many Requests',
+            headers: { 'x-ratelimit-reset': '900' },
+          }),
+        ),
+      );
+      const result = await handlePhotoSearch({ query: 'ratelimited' });
+      expect(result.isError).toBe(true);
+      const text = result.content[0] as { type: 'text'; text: string };
+      expect(text.text.toLowerCase()).toContain('rate limit');
+    });
+
+    it('returns 500 error as temporarily unavailable', async () => {
+      server.use(
+        http.get('https://api.pexels.com/v1/search', () =>
+          new HttpResponse(null, { status: 500, statusText: 'Internal Server Error' }),
+        ),
+      );
+      const result = await handlePhotoSearch({ query: 'server-error' });
+      expect(result.isError).toBe(true);
+      const text = result.content[0] as { type: 'text'; text: string };
+      expect(text.text).toContain('500');
     });
   });
 });

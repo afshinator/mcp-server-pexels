@@ -121,7 +121,7 @@ server.registerTool('pexels_search_photos', {
 
 ## Environment
 
-`PEXELS_API_KEY` must be set at runtime. Never hardcode it. For local dev, use a `.env` file loaded via `dotenv` (dev-only dependency).
+`PEXELS_API_KEY` must be set at runtime. Never hardcode it. For local dev, create a `.env` file and use the `start:dev` script, which loads it via Node's native `--env-file` flag (v20.6+). No `dotenv` package is needed or installed.
 
 ## tsconfig notes
 

@@ -26,3 +26,7 @@ export function setCache<T>(key: string, value: T, ttlSeconds?: number): void {
     cache.set(key, value);
   }
 }
+
+export function flushCache(): void {
+  cache.flushAll();
+}
