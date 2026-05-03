@@ -1,0 +1,9 @@
+{
+  "name": "mcp-server-pexels",
+  "description": "An MCP server for Pexels stock photo and video search. Provides high-quality media for AI agents with built-in caching and attribution.",
+  "keywords": ["pexels", "photos", "stock-media", "videos", "image-search"],
+  "license": "MIT",
+  "author": "afshinator",
+  "homepage": "https://github.com/afshinator/mcp-server-pexels",
+  "repository": "https://github.com/afshinator/mcp-server-pexels"
+}
