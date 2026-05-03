@@ -116,5 +116,8 @@ A structured JSON block is appended as the last content element in every success
 - **Metrics endpoint** — Expose counters (requests served, cache hit ratio, API quota remaining) for monitoring.
 - **Custom TTL configuration** — Allow users to tune cache TTL via environment variables.
 
+## Community Submissions
+- are welcome! 🌟
+
 ## License
 Unofficial community project. Not affiliated with Pexels.
