@@ -2,6 +2,9 @@
 
 An MCP server for Pexels stock photo and video search.  Optimized for LLMs.
 
+![project image](./mcp-pexels-image.png)
+
+
 [Pexels](https://www.pexels.com/api/) provides free stock photos and videos.
 
 
